@@ -131,6 +131,9 @@ if __name__ == "__main__":
           "optimal_breeding_temp_c": 14.0,
           "thermal_exponential_limit_q10": 2.2,
           "turbulence_fertilization_penalty_exponent": 1.5
+            "optimal_ph": 8.1,
+          "ph_tolerance_sigma": 0.35,      # Sharp drop off below 7.4 or above 8.8
+          "carrying_capacity": 10000.0
         }
       }
     }
@@ -138,8 +141,18 @@ if __name__ == "__main__":
     engine = PycnogonidPopulationEngine(mock_config)
     
     # Starting setup: 100 Larvae, 10 Juveniles, 5 Adults, 0 Brooding Males
-    starting_pop = [100, 10, 5, 0]
-    total_steps = 5
+    starting_pop = [200.0, 50.0, 20.0, 5.0]  # Larvae, Juv, Adult, Brood
+    steps = 6
+
+    # TIMELINE LOGIC: Simulating an industrial discharge or alkaline chemical surge at step 3 & 4
+    ph_spike_timeline = [
+        {"temperature": 14.0, "turbulence": 0.0, "ph": 8.1}, # Step 0: Baseline homeostatic ocean pH
+        {"temperature": 14.0, "turbulence": 0.0, "ph": 8.1}, # Step 1: Stability
+        {"temperature": 14.0, "turbulence": 0.0, "ph": 8.2}, # Step 2: Minor fluctuation
+        {"temperature": 14.0, "turbulence": 0.0, "ph": 9.4}, # Step 3: RAPID PH SPIKE (Highly Alkaline)
+        {"temperature": 14.0, "turbulence": 0.0, "ph": 9.6}, # Step 4: Continued Extreme Stress
+        {"temperature": 14.0, "turbulence": 0.0, "ph": 8.1}  # Step 5: Environmental recovery
+    ]
     
     # Simulate a dynamic scenario: Temperature increases, turbulence peaks at step 3
     mock_timeline = [
