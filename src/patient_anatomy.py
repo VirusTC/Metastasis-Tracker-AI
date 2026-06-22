@@ -1,5 +1,154 @@
 import math
 
+class CompleteMetabolicCTCUniverse:
+    def __init__(self, height_cm: float, weight_kg: float, hydration_level: float):
+        self.height_m = height_cm / 100.0
+        self.weight = weight_kg
+        self.chi = hydration_level
+        
+        # Fundamental Physiology baselines
+        self.bsa = 0.007184 * (height_cm ** 0.725) * (weight_kg ** 0.425)
+        self.cardiac_output_L_min = self.bsa * 3.0 * math.sqrt(self.chi)
+        
+        # Enzyme Profile
+        self.ca_acceleration_factor = 18500.0  # CA-II/IV kinetic multiplier
+        self.k_f_uncatalyzed = 0.03            # s^-1
+        
+    def calculate_ca_kinetics(self, co2_mmol_L: float, hco3_mmol_L: float, local_ph: float) -> dict:
+        """
+        Calculates the accelerated conversion rate of carbon dioxide to protons
+        within the RBC boundary layers.
+        """
+        h_insitu = math.pow(10, -local_ph) * 1e3 # mmol/L
+        
+        # Scale up forward and reverse rate constants using the acceleration factor
+        k_f_catalyzed = self.k_f_uncatalyzed * self.ca_acceleration_factor
+        k_r_catalyzed = k_f_catalyzed / 3.4e-4 # Equilibrium dissociation tracking constant
+        
+        forward_flux = k_f_catalyzed * co2_mmol_L
+        reverse_flux = k_r_catalyzed * hco3_mmol_L * h_insitu
+        net_flux = forward_flux - reverse_flux
+        
+        return {
+            "kinetic_acceleration_factor": self.ca_acceleration_factor,
+            "forward_hydration_flux_mmol_L_s": forward_flux,
+            "reverse_dehydration_flux_mmol_L_s": reverse_flux,
+            "net_proton_generation_rate": net_flux
+        }
+
+    def simulate_respiratory_compensation(self, current_arterial_ph: float, baseline_pco2: float) -> dict:
+        """
+        Simulates the brainstem cheoreceptor feedback loop executing hyperventilation
+        to rescue the blood pool from acidosis.
+        """
+        ve_baseline = 6.0  # Liters/min standard resting minute ventilation
+        
+        # Sensitivity parameters to deviations from homeostatic norms (pH 7.40, pCO2 40mmHg)
+        s_central_ph = 115.0 
+        s_peripheral_pco2 = 1.2
+        
+        ph_deviation = max(0.0, 7.40 - current_arterial_ph)
+        pco2_deviation = max(0.0, baseline_pco2 - 40.0)
+        
+        # Calculate dynamic target minute ventilation
+        minute_ventilation_L_min = ve_baseline + (s_central_ph * ph_deviation) + (s_peripheral_pco2 * pco2_deviation)
+        minute_ventilation_L_min = min(90.0, max(ve_baseline, minute_ventilation_L_min)) # Human ceiling cap
+        
+        # Calculate corrected homeostatic pCO2 following expiration washout rules
+        washout_coefficient = minute_ventilation_L_min / ve_baseline
+        compensated_pco2 = baseline_pco2 / washout_coefficient
+        
+        return {
+            "induced_minute_ventilation_L_min": minute_ventilation_L_min,
+            "washout_efficiency_multiplier": washout_coefficient,
+            "post_compensation_pco2_mmHg": max(15.0, compensated_pco2)
+        }
+
+    def predict_ctc_seeding_matrix(self, generation: int, local_ph: float, vessel_radius_m: float, input_ctc_count: int) -> dict:
+        """
+        Integrates downstream physiological data directly into tumor cell transport,
+        mechanical deformation entrapment, and endothelial adhesion matrices.
+        """
+        # Step 1: Evaluate micro-environmental acidosis severity
+        acid_stress_factor = max(0.0, 7.40 - local_ph)
+        
+        # Step 2: Model structural cell rigidity mechanics (Deformability loss under acid conditions)
+        # Low pH compromises tumor cell membranes, making them brittle
+        ctc_rigidity_index = 1.0 + (5.5 * acid_stress_factor)
+        
+        # Step 3: Compute mechanical entrapment odds (Generation 30 capillaries represent high hazard)
+        vessel_diameter_micron = vessel_radius_m * 2.0 * 1e6
+        if vessel_diameter_micron < 12.0: # Capillary boundary threshold check
+            base_entrapment_prob = 0.35
+            entrapment_probability = base_entrapment_prob * ctc_rigidity_index
+        else:
+            entrapment_probability = 0.01 * ctc_rigidity_index
+        entrapment_probability = min(0.98, entrapment_probability)
+        
+        # Step 4: Model endothelial biochemical adhesion upregulations (Integrin/Selectin binding affinity)
+        # Inflammatory response to acid conditions enhances receptor binding chances
+        adhesion_probability = 0.05 * (1.0 + (3.0 * acid_stress_factor)) if entrapment_probability < 0.5 else 0.85
+        adhesion_probability = min(0.95, adhesion_probability)
+        
+        # Combine probabilities to output dynamic seeding yield metrics
+        total_seeding_probability = entrapment_probability + (1.0 - entrapment_probability) * adhesion_probability
+        successfully_seeded_cells = int(input_ctc_count * total_seeding_probability)
+        surviving_circulating_cells = input_ctc_count - successfully_seeded_cells
+        
+        return {
+            "vessel_generation": generation,
+            "vessel_diameter_microns": vessel_diameter_micron,
+            "calculated_ctc_rigidity": ctc_rigidity_index,
+            "entrapment_risk_percent": entrapment_probability * 100.0,
+            "endothelial_adhesion_affinity_percent": adhesion_probability * 100.0,
+            "net_seeding_probability_percent": total_seeding_probability * 100.0,
+            "cells_seeded_count": successfully_seeded_cells,
+            "cells_remaining_in_flow": surviving_circulating_cells
+        }
+
+# =====================================================================
+# Full Verification Loop Execution
+# =====================================================================
+if __name__ == "__main__":
+    universe = CompleteMetabolicCTCUniverse(height_cm=175.0, weight_kg=72.0, hydration_level=0.92)
+    
+    print("=========================================================================")
+    print("INTEGRATED KINETIC, RESPIRATORY, AND ONCOLOGICAL SYSTEM ENGINE")
+    print("=========================================================================\n")
+    
+    # Context Phase 1: Acidosis onset with high CO2 pooling in tissues
+    test_co2 = 2.4   # mmol/L
+    test_hco3 = 22.0 # mmol/L
+    acidic_ph = 7.15 # Severely compromised organ zone
+    
+    kinetic_report = universe.calculate_ca_kinetics(co2_mmol_L=test_co2, hco3_mmol_L=test_hco3, local_ph=acidic_ph)
+    print("--- 1. RBC CARBONIC ANHYDRASE BOUNDARY KINETICS ---")
+    print(f" Carbonic Anhydrase Acceleration Multiplier: {kinetic_report['kinetic_acceleration_factor']}x")
+    print(f" Accelerated Protons Generated inside RBC Layer:  {kinetic_report['net_proton_generation_rate']:.2f} mmol/L/s\n")
+    
+    # Context Phase 2: Chemoreceptors detect pH crash and drive hyperventilation rescue
+    resp_report = universe.simulate_respiratory_compensation(current_arterial_ph=acidic_ph, baseline_pco2=58.0)
+    print("--- 2. CENTRAL CHEMORECEPTOR RESPIRATORY FEEDBACK LOOP ---")
+    print(f" Acid-Triggered Minute Ventilation Demand: {resp_report['induced_minute_ventilation_L_min']:.1f} L/min (Hyperventilation Active)")
+    print(f" CO2 Expiration Washout Performance Factor: {resp_report['washout_efficiency_multiplier']:.2f}x speed")
+    print(f" Compensated Downstream Central Arterial pCO2: {resp_report['post_compensation_pco2_mmHg']:.1f} mmHg\n")
+    
+    # Context Phase 3: Connect metrics directly to the Metastasis Tracker Seeding Logic
+    print("--- 3. ENVIRONMENTAL TUMOR-CELL METASTASIS SEEDING LAYER ---")
+    sample_ctc_load = 10000 # Cells entered into regional flow vector
+    
+    # Trace macro-vessel vs capillary entrapment properties under acid stress
+    macro_vessel_seeding = universe.predict_ctc_seeding_matrix(generation=4, local_ph=acidic_ph, vessel_radius_m=0.0025, input_ctc_count=sample_ctc_load)
+    micro_capillary_seeding = universe.predict_ctc_seeding_matrix(generation=30, local_ph=acidic_ph, vessel_radius_m=0.0000045, input_ctc_count=sample_ctc_load)
+    
+    print(f" Large Artery Node (Gen 4 | Diameter: {macro_vessel_seeding['vessel_diameter_microns']:.1f} um):")
+    print(f"  -> Adhesion Risk: {macro_vessel_seeding['endothelial_adhesion_affinity_percent']:.1f}% | Total Seeded: {macro_vessel_seeding['cells_seeded_count']} cells")
+    
+    print(f"\n Micro Capillary Bed Node (Gen 30 | Diameter: {micro_capillary_seeding['vessel_diameter_microns']:.1f} um):")
+    print(f"  -> Rigid Mechanical Entrapment Risk: {micro_capillary_seeding['entrapment_risk_percent']:.1f}%")
+    print(f"  -> Total Metastatic Colonization Yield:   {micro_capillary_seeding['cells_seeded_count']} cells / {sample_ctc_load} transit pool input.")
+
+
 class PatientSimulationEngine:
     def __init__(self, height_cm: float, weight_kg: float, body_build: str, hydration_level: float):
         """
