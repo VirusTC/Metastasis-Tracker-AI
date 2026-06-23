@@ -1,6 +1,11 @@
 # Append these lines to your existing root Makefile mapping core target shortcuts
 # Append these validation targets to your repository root Makefile mapping configuration
-.PHONY: plot config-archive animate test-bounds compile-gif test-anticoag test-schema export-fhir compile-csv test-fhir-pipeline test-reflexes export-reflex-fhir test-local-workflow print-h5-schema parse-h5 test-hdf5-compliance visualize-pulmonary test-chart-layout deploy-wiki
+.PHONY: plot config-archive animate test-bounds compile-gif test-anticoag test-schema export-fhir compile-csv test-fhir-pipeline test-reflexes export-reflex-fhir test-local-workflow print-h5-schema parse-h5 test-hdf5-compliance visualize-pulmonary test-chart-layout deploy-wiki parse-tokens
+
+
+parse-tokens:
+	@echo "Parsing YAML profile rules to extract secure authenticated deployment tokens..."
+	python3 src/wiki_config_parser.py
 
 test-chart-layout:
 	@echo "Checking rendered plot layout bounding-boxes for textual collisions..."
