@@ -40,6 +40,12 @@ steps:
     - name: Grant Shell Script Write Permissions
       run: chmod +x run_pipeline.sh
 
+    - name: Grant Shell Script Write Permissions
+      run: chmod +x run_pipeline.sh src/check_md_links.sh
+
+    - name: Execute Automated Markdown File Link Verification
+      run: ./src/check_md_links.sh
+
     - name: Execute Aerodynamic Gas Jet and Reflex Verification Matrix
       run: python3 src/respiratory_reflex_engine.py
 
