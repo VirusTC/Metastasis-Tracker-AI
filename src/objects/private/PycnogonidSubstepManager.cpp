@@ -1,6 +1,20 @@
 #include "PycnogonidSubstepManager.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "Components/PrimitiveComponent.h"
+// 1. Primary Class Header Link
+#include "PycnogonidSubstepManager.h"
+
+// 2. Objects Subsystem Header Links (Explicit paths matching the folder layout)
+#include "objects/public/PycnogonidBiomassPayload.h"
+
+// 3. Low-Level Unreal Engine Physics & Component System Modules
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
+#include "Components/PrimitiveComponent.h"
+#include "Math/UnrealMathUtility.h"
+
+// ==============================================================================
+// Implementation code continues below...
+// ==============================================================================
 
 UPycnogonidSubstepManager::UPycnogonidSubstepManager()
 {
