@@ -1,0 +1,4 @@
+# Metastasis-Tracker-AI Interoperability Data Retention & Alert Specification
+retention_policies:
+  max_log_age_days: 7                   # Raw individual JSON file lifetime threshold 
+  alert_outlier_threshold_platelets: 150000.0 # Clinical floor; tracks thrombocytopenia anomalies
