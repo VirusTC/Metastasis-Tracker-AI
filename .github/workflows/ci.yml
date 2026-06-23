@@ -54,6 +54,9 @@ steps:
 
     - name: Execute Automated HDF5 Data Container Compliance Verification Checks
       run: python3 src/pulmonary_hdf5_core.py
+
+    - name: Run Automated Plot Layout Overlap Validation Testing
+      run: python3 src/validate_plots.py
       
     - name: Execute End-to-End Integration Validation Checks
       run: python3 -m unittest tests/test_integration_pipeline.py
