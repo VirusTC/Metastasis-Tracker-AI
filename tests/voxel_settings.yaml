@@ -1,0 +1,5 @@
+# Metastasis-Tracker-AI 3D Voxel Camera View Properties Profile
+view_parameters:
+  default_elevation: 30.0         # Camera pitch angle (elevation) in degrees
+  total_rotation_steps: 24        # Total number of frames generated across 360-degree azimuth turn
+  animation_fps: 12               # Output target playback frequency for compiler routines
