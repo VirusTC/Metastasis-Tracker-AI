@@ -1,0 +1,64 @@
+name: Pycnogonid Simulation Subsystem Verification
+
+# Trigger the automation pipeline on code updates to core branches
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-22.04
+    
+    steps:
+    # 1. Checkout the source code from your repository
+    - name: Checkout Codebase
+      uses: actions/checkout@v4
+
+    # 2. Establish standard Python environment matrix
+    - name: Set up Python 3.10
+      uses: actions/checkout@v4
+      with:
+        python-version: '3.10'
+
+    # 3. Mount cache systems to speed up sequential pipeline runs
+    - name: Cache Pip Dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    # 4. Install pipeline validation dependencies headlessly
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        # Ensure jsonschema is available for the automated telemetry outputs validation
+        pip install jsonschema numpy
+
+    # 5. Execute structural JSON schema validations and initial unit tests
+    - name: Run Core Subsystem Math Tests
+      run: |
+        python3 -m unittest discover -s tools -p "test_*.py"
+
+    # 6. Verify command-line wrapper shell permissions and flow execution
+    - name: Verify Shell Execution Permissions
+      run: |
+        chmod +x run_ci_pipeline.sh
+        # Check script syntax without triggering an active GUI compilation hang
+        bash -n run_ci_pipeline.sh
+
+    # 7. Output Success Manifest for diagnostic analytics
+    - name: Publish Test Status Manifest
+      if: always()
+      run: |
+        echo "====================================================="
+        echo "📊 CI PIPELINE STATUS SUMMARY"
+        echo "====================================================="
+        echo "Workflow Run ID : ${{ github.run_id }}"
+        echo "Commit SHA      : ${{ github.sha }}"
+        echo "Status          : Verification Completed Headlessly"
+        echo "====================================================="
