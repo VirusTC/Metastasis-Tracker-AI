@@ -10,6 +10,10 @@ export-reflex-fhir:
 	@echo "Processing respiratory reflex metrics into HL7 FHIR R4 JSON observation structures..."
 	python3 -c "from src.respiratory_reflex_engine import IntegratedRespiratoryReflexEngine; e=IntegratedRespiratoryReflexEngine(175,72,1.0); r=e.evaluate_lower_airway_cough(0,4.5,7.4); e.commit_fhir_observation_record('pat-09', r)"
 
+parse-reflex-fhir:
+	@echo "Unpacking nested FHIR JSON observation payloads into human-readable text blocks..."
+	python3 src/data/fhir/parse_reflex_payload.py
+
 compile-csv:
 	@echo "Flattening individual timestamped JSON logs into a unified flat CSV spreadsheet..."
 	chmod +x src/data/fhir/compile_csv.sh
