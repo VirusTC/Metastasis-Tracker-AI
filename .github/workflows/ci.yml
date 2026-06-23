@@ -17,7 +17,7 @@ jobs:
     - name: Set up Python 3.11 environment
       uses: actions/setup-python@v5
       with:
-        python-python-version: '3.11'
+        python-version: '3.11'
 
     - name: Install Ingestion Dependencies
       run: |
@@ -25,6 +25,12 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         # Ensure PyYAML is present to parse patient validation bounds configs
         pip install pyyaml
+
+    - name: Install Ingestion Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install pyyaml matplotlib
 
     - name: Grant Shell Script Write Permissions
       run: chmod +x run_pipeline.sh
@@ -34,3 +40,28 @@ jobs:
 
     - name: Execute Electrophysiological Cardiac Test Matrix
       run: python3 src/cardiac_ecg_engine.py
+
+    - name: Execute End-to-End Integration Validation Checks
+      run: python3 -m unittest tests/test_integration_pipeline.py
+
+    - name: Dispatch Outbound Webhook Alert on Core Failure
+      if: failure()
+      env:
+        WEBHOOK_URL: ${{ secrets.DEVELOPER_WEBHOOK_ENDPOINT }}
+      run: |
+        echo "Validation boundary breach detected. Dispatching diagnostic telemetry..."
+        curl -X POST -H "Content-Type: application/json" \
+          -d '{
+            "text": "🚨 *CRITICAL PIPELINE FAILURE*: Metastasis-Tracker-AI CI/CD pipeline check has failed standard validation bounds.",
+            "attachments": [
+              {
+                "color": "danger",
+                "fields": [
+                  { "title": "Repository Vector", "value": "${{ github.repository }}", "short": true },
+                  { "title": "Commit Trigger ID", "value": "`${{ github.sha }}`", "short": true },
+                  { "title": "Ref Target Branch", "value": "${{ github.ref }}", "short": true },
+                  { "title": "Workflow Diagnostic Execution Logs", "value": "https://github.com{{ github.repository }}/actions/runs/${{ github.run_id }}", "short": false }
+                ]
+              }
+            ]
+          }' $WEBHOOK_URL
