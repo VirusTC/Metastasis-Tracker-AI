@@ -1,8 +1,3 @@
-Here is the updated, comprehensive `README.md` incorporating all the modules, physics engines, clinical integrations, and 3D visualization systems currently mapped within the repository.
-
-Markdown
-
-```
 # Metastasis-Tracker-AI
 
 An advanced, AI-driven medical software suite designed to track, simulate, and predict hematogenous cancer metastasis.
