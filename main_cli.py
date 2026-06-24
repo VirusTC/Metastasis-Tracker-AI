@@ -239,7 +239,13 @@ def main():
     parser.add_argument("--tip-radius", type=float, default=3.5, help="Radius of contact curvature (microns) for trauma engine.")
     parser.add_argument("--agent_id", default="Vect_Alpha_Prod", help="Unique ID assigned to the variant species instance.")
     parser = argparse.ArgumentParser(description="HPC Clinical CLI Command Center for Metastasis-Tracker-AI.")
-    
+
+    # Epic Integration Arguments
+    parser.add_argument("--push-to-epic", action="store_true", help="Instantly transmit the generated FHIR payload to Epic EHR.")
+    parser.add_argument("--epic-url", default="https://epic.hospital.org/interconnect", help="Hospital's Epic FHIR endpoint.")
+    parser.add_argument("--epic-client", help="Epic App Orchard Client ID.")
+    parser.add_argument("--epic-key", default="workspace/certs/epic_private.pem", help="Path to Epic RS384 private key.")
+
     # Input/Output Arguments
     parser.add_argument("--ehr", required=True, help="Path to single EHR JSON file OR a directory of EHRs for batch processing.")
     parser.add_argument("--export-dir", default="outbound", help="Directory to save generated HL7/FHIR JSON payloads.")
