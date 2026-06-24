@@ -160,6 +160,48 @@ def generate_fhir_bundle(lodging_data, final_mass_projection, clinical_stage, pa
 def process_patient_ehr(ehr_file, args, agent_config):
     """Isolated worker process for Multicore Batching."""
     try:
+        if args.mode == "oncology":
+            from src.clinical_pipeline import OncologyPredictionPipeline
+            pipeline = OncologyPredictionPipeline(
+                ehr_filepath=ehr_file,
+                agent_config=agent_config,
+                breeding_config_filepath=args.breeding,
+                enzymes_filepath=args.enzymes
+            )
+            lodging_data, population_history, clinical_stage = pipeline.run_clinical_assessment(simulation_months=args.months)
+            total_final_mass = sum(population_history[:, -1]) if population_history is not None else 0
+            
+            # File generation (FHIR bundle logic)
+            out_file = None
+            if args.export_dir:
+                os.makedirs(args.export_dir, exist_ok=True)
+                patient_id = os.path.basename(ehr_file).replace('.json', '')
+                out_file = os.path.join(args.export_dir, f"{patient_id}_metastasis_bundle.json")
+                fhir_payload = generate_fhir_bundle(lodging_data, total_final_mass, clinical_stage, patient_id)
+                with open(out_file, 'w') as f:
+                    json.dump(fhir_payload, f, indent=2)
+            return True, ehr_file, out_file
+
+        elif args.mode == "trauma":
+            from src.trauma_fluid_core import VascularHemorrhageDynamicsEngine
+            # Initialize the new mechanical stress engine
+            engine = VascularHemorrhageDynamicsEngine(tip_radius_microns=args.tip_radius)
+            # Evaluate baseline puncture stress against the macro arterial trunk
+            results = engine.evaluate_tissue_puncture_stress(applied_force_newtons=1.2, tissue_type="Macro Artery Core Trunk")
+            print(f"   -> [TRAUMA] Puncture Status: {results['puncture_status']} | Stress: {results['applied_stress_MPa']:.3f} MPa")
+            return True, ehr_file, "Console Output (Trauma Engine)"
+
+        elif args.mode == "metabolism":
+            from src.metabolic_dashboard_engine import MetabolicDashboardEngine
+            engine = MetabolicDashboardEngine()
+            results = engine.calculate_carbonic_anhydrase_kinetics(temperature_c=38.0, local_pco2_mmhg=45.0)
+            print(f"   -> [METABOLISM] CA Flux: {results['conversion_velocity_mmol_sec']:.3f} mmol/s | Buffer pH: {results['homeostatic_buffer_ph']:.2f}")
+            return True, ehr_file, "Console Output (Metabolic Kinetics)"
+
+    except Exception as e:
+        return False, ehr_file, str(e)
+        
+    try:
         from src.clinical_pipeline import OncologyPredictionPipeline
         pipeline = OncologyPredictionPipeline(
             ehr_filepath=ehr_file,
@@ -188,6 +230,14 @@ def process_patient_ehr(ehr_file, args, agent_config):
         return False, ehr_file, str(e)
 
 def main():
+    # Simulation Arguments
+    parser.add_argument("--mode", default="oncology", choices=["oncology", "trauma", "metabolism", "pulmonary"], 
+                        help="Select which clinical engine to execute on the batch.")
+    
+    # Engine-Specific Arguments
+    parser.add_argument("--months", type=int, default=6, help="Staging projection timeline window (months) for oncology.")
+    parser.add_argument("--tip-radius", type=float, default=3.5, help="Radius of contact curvature (microns) for trauma engine.")
+    parser.add_argument("--agent_id", default="Vect_Alpha_Prod", help="Unique ID assigned to the variant species instance.")
     parser = argparse.ArgumentParser(description="HPC Clinical CLI Command Center for Metastasis-Tracker-AI.")
     
     # Input/Output Arguments
